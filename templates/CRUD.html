@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitios Turísticos</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Sitios Turísticos</h1>
+    <h2>Crear/Actualizar Sitio Turístico</h2>
+    <form id="sitioForm">
+        <input type="hidden" id="sitioId" name="sitioId" value="">  
+        
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre"><br>
+
+        <label for="descripcion">Descripción:</label>
+        <input type="text" id="descripcion" name="descripcion"><br>
+
+        <label for="ubicacion">Ubicación:</label>
+        <input type="text" id="ubicacion" name="ubicacion"><br>
+
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha"><br>
+
+        <button type="submit">Guardar</button>
+    </form>
+
+    <h3>Lista de Sitios Turísticos</h3>
+    <ul id="sitiosList"></ul>
+
+    <script>
+        function obtenerSitios() {
+            $.ajax({
+                url: '/sitios_turisticos',
+                type: 'GET',
+                success: function (data) {
+                    $('#sitiosList').empty(); 
+                    data.forEach(function (sitio) {
+                        $('#sitiosList').append(`
+                            <li>
+                                <strong>${sitio.nombre}</strong> - ${sitio.descripcion} (${sitio.ubicacion}, Fecha: ${sitio.fecha})
+                                <button onclick="editarSitio(${sitio.id})">Editar</button>
+                                <button onclick="borrarSitio(${sitio.id})">Eliminar</button>
+                            </li>
+                        `);
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error: " + error);
+                    alert("Hubo un problema al obtener los sitios turísticos.");
+                }
+            });
+        }
+
+        $('#sitioForm').on('submit', function (e) {
+            e.preventDefault();
+            var sitioId = $('#sitioId').val(); 
+
+            var sitioData = {
+                nombre: $('#nombre').val(),
+                descripcion: $('#descripcion').val(),
+                ubicacion: $('#ubicacion').val(),
+                fecha: $('#fecha').val()
+            };
+
+            if (sitioId) {
+                $.ajax({
+                    url: `/sitios_turisticos/${sitioId}`,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(sitioData),
+                    success: function (response) {
+                        alert('Sitio turístico actualizado!');
+                        $('#sitioId').val(''); 
+                        $('#sitioForm')[0].reset(); 
+                        obtenerSitios(); 
+                    },
+                    error: function (xhr, status, error) {
+                        console.log("Error: " + error);
+                        alert("Hubo un problema al actualizar el sitio turístico.");
+                    }
+                });
+            } else {
+            
+                $.ajax({
+                    url: '/sitios_turisticos',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(sitioData),
+                    success: function (response) {
+                        alert('Sitio turístico creado!');
+                        $('#sitioForm')[0].reset();  
+                        obtenerSitios();  
+                    },
+                    error: function (xhr, status, error) {
+                        console.log("Error: " + error);
+                        alert("Hubo un problema al crear el sitio turístico.");
+                    }
+                });
+            }
+        });
+
+        function editarSitio(id) {
+            $.ajax({
+                url: `/sitios_turisticos/${id}`,
+                type: 'GET',
+                success: function (sitio) {
+                    $('#sitioId').val(sitio.id);  
+                    $('#nombre').val(sitio.nombre);
+                    $('#descripcion').val(sitio.descripcion);
+                    $('#ubicacion').val(sitio.ubicacion);
+                    $('#fecha').val(sitio.fecha);
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error: " + error);
+                    alert("Hubo un problema al cargar el sitio turístico.");
+                }
+            });
+        }
+        function borrarSitio(id) {
+            $.ajax({
+                url: `/sitios_turisticos/${id}`,
+                type: 'DELETE',
+                success: function () {
+                    alert('Sitio turístico eliminado!');
+                    obtenerSitios();
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error: " + error);
+                    alert("Hubo un problema al eliminar el sitio turístico.");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            obtenerSitios();
+        });
+    </script>
+</body>
+</html>
